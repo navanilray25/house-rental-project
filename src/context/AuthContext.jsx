@@ -115,10 +115,64 @@ export function AuthProvider({ children }) {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        let { data, error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
         });
+
+        // Auto-provision default admin if not yet registered in Supabase
+        if (error && email.trim().toLowerCase() === 'admin@rental.com' && password === 'admin123') {
+          try {
+            const signUpRes = await supabase.auth.signUp({
+              email: 'admin@rental.com',
+              password: 'admin123',
+              options: {
+                data: {
+                  name: 'Property Manager',
+                  roomNumber: 'Office',
+                  room_number: 'Office',
+                  phone: '9876543210',
+                  role: 'admin',
+                },
+              },
+            });
+
+            if (!signUpRes.error && signUpRes.data?.user) {
+              const uid = signUpRes.data.user.id;
+              const profileData = {
+                uid,
+                id: uid,
+                name: 'Property Manager',
+                email: 'admin@rental.com',
+                phone: '9876543210',
+                role: 'admin',
+                roomNumber: 'Office',
+                baseRent: 0,
+                status: 'active',
+                createdAt: new Date().toISOString(),
+              };
+              await saveUserProfile(uid, profileData);
+
+              const retry = await supabase.auth.signInWithPassword({
+                email: 'admin@rental.com',
+                password: 'admin123',
+              });
+
+              if (retry.data?.user) {
+                const profile = await getUserProfile(retry.data.user.id);
+                const userObj = buildUserObject(retry.data.user, profile || profileData);
+                setCurrentUser(userObj);
+                return { success: true, user: userObj };
+              } else {
+                const userObj = buildUserObject(signUpRes.data.user, profileData);
+                setCurrentUser(userObj);
+                return { success: true, user: userObj };
+              }
+            }
+          } catch (autoErr) {
+            console.warn('Auto admin creation warning:', autoErr);
+          }
+        }
 
         if (error) {
           setAuthError(error.message);

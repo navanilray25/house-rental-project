@@ -52,7 +52,11 @@ export default function AdminLogin({ houseSettings }) {
           navigate('/admin');
         }
       } else {
-        setErrorMsg(res.error || 'Invalid admin credentials.');
+        if (res.error?.toLowerCase().includes('invalid login credentials')) {
+          setErrorMsg('Admin account not found in your Supabase database yet. Please click "Register Admin Account" below (Passcode: admin123) to register it, or re-check your password.');
+        } else {
+          setErrorMsg(res.error || 'Invalid admin credentials.');
+        }
       }
     }
   }
