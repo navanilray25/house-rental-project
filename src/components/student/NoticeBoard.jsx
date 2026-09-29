@@ -12,7 +12,7 @@ export default function NoticeBoard({ notices = [] }) {
           House Notice Board & Announcements
         </h2>
         <p className="text-sm text-slate-500 mt-1">
-          Stay informed about maintenance schedules, house rules, and important notices from the management.
+          Stay informed about maintenance schedules, house rules, and important notices from the management ownergit add ..
         </p>
       </div>
 
